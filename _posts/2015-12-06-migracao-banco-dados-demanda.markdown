@@ -1,10 +1,9 @@
 ---
 layout: post
-title:  "Database Migration On The Fly"
+title:  "Migração de Banco de Dados sob Demanda"
 date:   2015-12-06 18:50:52 -0800
-categories: database migration fly demand mongodb java
+categories: banco de dados schema migração sob demanda mongodb java
 ---
-# Database Migration On The Fly
 
 Nos últimos anos, os times agéis tem adotado a técnica chamada [Evolutionary Database Design](http://martinfowler.com/articles/evodb.html), que basicamente consiste em evoluir o schema do banco de dados gradualmente durante a fase de desenvolvimento e automatizar as mudanças através de scripts que geralmente rodam durante o processo de deploy da aplicação.
 
@@ -22,6 +21,7 @@ O fato de usar um banco noSQL como o MongoDB é essencial a execução desta té
 
 Digamos que existe uma coleção chamada people com a seguinte estrutura:
 
+
 ```javascript
 {
   "_id": ObjectId("507f1f77bcf86cd799439011"),
@@ -30,6 +30,7 @@ Digamos que existe uma coleção chamada people com a seguinte estrutura:
 }
 ```
 
+
 ```java
 class Person {
   UUID id;
@@ -37,6 +38,7 @@ class Person {
   String telephone;
 }
 ```
+
 Inicialmente o cliente achou que cada pessoa deveria ter apenas um telefone. Depois decidiu-se que ao invés de armazenar apenas um telefone, pode-se armazenar múltiplos. 
 
 Para atender a mudança, o time decidiu que deveria escrever uma migração para mudar o "schema lógico" e o estrutura ficará assim:
@@ -48,6 +50,7 @@ Para atender a mudança, o time decidiu que deveria escrever uma migração para
   "telephones": ["14159363485"]
 }
 ```
+
 ```java
 class Person {
   UUID id;
@@ -55,6 +58,7 @@ class Person {
   List<String> telephones;
 }
 ```
+
 Como as coisas serão feitas "on the fly", cada documento terá que guardar uma versão de si mesmo, para sabermos se a migração deverá ser aplicada. Então será adicionado o campo "migrationVersion" em cada um deles.
 
 ```javascript
@@ -100,6 +104,7 @@ No método onBeforeSave, atribui-se a versão final naquele documento. Como o ob
 Com isso, garantimos que toda vez que o objeto for lido, ele vai ser convertido para algo que o domínio entende e toda vez que for salvo, já estará no schema lógico final. Deste modo, a migração é feita de maneira suave, sem impactar o downtime do sistema e sem poluir as classes de domínio.
 
 Abaixo segue a implementação da classe MigrationOnTheFly.
+
 ```java
 public class MigrationOnTheFly {
 
@@ -138,14 +143,18 @@ Porém nem tudo são flores.
 
 Existe alguns cenários que também deve-se estar atento. Caso a aplicação faça alguma consulta que utiliza o campo migrado, deve-se alterar estas consultas para contemplar múltiplas versões. 
 
-##### Exemplo:
+Exemplo:
+
 Antes da migração 1
+
 ```javascript
 db.people.find({
   'telephone': '14159363485'
 })
 ```
+
 Depois da migração 1
+
 ```javascript
 db.people.find({
   $or:[
@@ -154,6 +163,7 @@ db.people.find({
   ]
 })
 ```
+
 Isto pode aumentar a complexidade a medida em aumenta o número de migrações e caso tenha mudanças em campos usados nas consultas.
 
 Uma solução é, além de ter essa migração on the fly, ter um job seja iniciado após o deploy e faça as migrações em paralelo para garantir que todos os dados eventualmente estarão migrados.
