@@ -2,7 +2,7 @@
 layout: post
 title:  "Migração de Banco de Dados sob Demanda"
 date:   2015-12-06 18:50:52 -0800
-categories: banco de dados schema migração sob demanda mongodb java
+categories: banco dados schema migracao demanda mongodb java
 ---
 
 Nos últimos anos, os times agéis tem adotado a técnica chamada [Evolutionary Database Design](http://martinfowler.com/articles/evodb.html), que basicamente consiste em evoluir o schema do banco de dados gradualmente durante a fase de desenvolvimento e automatizar as mudanças através de scripts que geralmente rodam durante o processo de deploy da aplicação.
